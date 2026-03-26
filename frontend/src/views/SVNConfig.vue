@@ -189,7 +189,8 @@ const loadConfig = async () => {
   } catch (error) {
     console.error('加载配置失败:', error)
     if (error.name === 'AbortError') {
-      errorMessage.value = '加载配置超时，请稍后重试'
+      // 请求被取消（可能是组件切换），不显示错误
+      return
     } else if (error.message.includes('Failed to fetch')) {
       errorMessage.value = '无法连接到服务器，请检查后端服务是否运行'
     } else {
@@ -242,7 +243,8 @@ const handleSubmit = async (values) => {
   } catch (error) {
     console.error('保存配置失败:', error)
     if (error.name === 'AbortError') {
-      errorMessage.value = '保存配置超时，请稍后重试'
+      // 请求被取消，不显示错误
+      return
     } else if (error.message.includes('Failed to fetch')) {
       errorMessage.value = '无法连接到服务器，请检查后端服务是否运行'
     } else {
@@ -292,7 +294,8 @@ const testConnection = async () => {
   } catch (error) {
     console.error('测试连接失败:', error)
     if (error.name === 'AbortError') {
-      errorMessage.value = '连接测试超时，请稍后重试'
+      // 请求被取消，不显示错误
+      return
     } else if (error.message.includes('Failed to fetch')) {
       errorMessage.value = '无法连接到服务器，请检查后端服务是否运行'
     } else {

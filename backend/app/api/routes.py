@@ -101,10 +101,17 @@ def test_connection(root_svn_url: str, username: str, password: str):
 @router.post("/task/new")
 def create_new_task(root_svn_url: str = Form(...), username: str = Form(...), password: str = Form(...), batch_size: int = Form(500), db: Session = Depends(get_db)):
     """新建全新扫描任务"""
-    # 清空旧数据
-    db.query(SVNFile).delete()
-    db.query(ScanTask).delete()
-    db.commit()
+    # 清空旧数据（先删除子表，再删除父表）
+    try:
+        # 使用原生 SQL 删除，避免外键约束问题
+        from sqlalchemy import text
+        db.execute(text('DELETE FROM svn_file'))
+        db.execute(text('DELETE FROM scan_task'))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"清空数据失败: {e}")
+        # 如果清空失败，继续创建新任务
     
     # 创建新任务
     new_task = ScanTask(

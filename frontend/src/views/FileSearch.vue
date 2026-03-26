@@ -188,7 +188,8 @@ const handleSearch = async () => {
   } catch (error) {
     console.error('搜索失败:', error)
     if (error.name === 'AbortError') {
-      errorMessage.value = '搜索请求超时，请稍后重试'
+      // 请求被取消（可能是组件切换），不显示错误
+      return
     } else if (error.message.includes('Failed to fetch')) {
       errorMessage.value = '无法连接到服务器，请检查后端服务是否运行'
     } else {

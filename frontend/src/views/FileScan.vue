@@ -44,17 +44,11 @@
       </Empty>
       
       <div v-else-if="taskStatus.status !== 'no_task'" class="task-status">
-        <Progress 
-          :percent="progressPercent" 
-          :status="progressStatus"
-          :format="progressFormat" 
-          style="margin-bottom: 20px" 
-        />
         <div class="status-info">
           <p><strong>状态：</strong>
             <Tag :color="statusColor">{{ taskStatus.status }}</Tag>
           </p>
-          <p><strong>已扫描：</strong>{{ taskStatus.scanned_count }} / {{ taskStatus.total_count || '未知' }}</p>
+          <p><strong>已扫描：</strong>{{ taskStatus.scanned_count }} 条</p>
           <p v-if="taskStatus.now_scan_dir"><strong>当前目录：</strong>{{ taskStatus.now_scan_dir }}</p>
         </div>
         
@@ -366,9 +360,11 @@ const connectWebSocket = () => {
             }
             // 保持日志滚动到底部
             nextTick(() => {
-              if (logContent.value) {
-                logContent.value.scrollTop = logContent.value.scrollHeight
-              }
+              setTimeout(() => {
+                if (logContent.value) {
+                  logContent.value.scrollTop = logContent.value.scrollHeight
+                }
+              }, 50)
             })
           }
         }
@@ -451,14 +447,20 @@ onUnmounted(() => {
   border: 1px solid #e8e8e8;
   border-radius: 4px;
   padding: 10px;
-  height: 300px;
-  overflow: auto;
+}
+
+.log-container h4 {
+  margin: 0 0 10px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .log-content {
   font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
+  height: 250px;
+  overflow-y: auto;
 }
 
 .log-item {
