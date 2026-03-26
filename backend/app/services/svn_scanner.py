@@ -48,23 +48,12 @@ class SVNScanner:
             
             # 检查是否有上次的扫描目录
             last_scan_dir = task.now_scan_dir
-            logger.info(f"上次扫描目录: {last_scan_dir}")
+            logger.info(f"上次扫描目录: {last_scan_dir}, 已扫描文件数: {task.scanned_count}")
             
-            # 构建扫描命令
-            if last_scan_dir:
-                # 从上次的扫描目录开始扫描
-                # 移除末尾的 '/'，确保路径正确
-                if last_scan_dir.endswith('/'):
-                    last_scan_dir = last_scan_dir[:-1]
-                # 构建完整的URL
-                scan_url = f"{task.root_svn_url}/{last_scan_dir}"
-                # 使用列表传递参数，避免空格问题
-                cmd = base_cmd + ["ls", "-R", "--depth", "infinity", scan_url, "--username", task.username, "--password", task.password]
-                logger.info(f"从上次扫描目录开始执行SVN扫描命令: svn ls -R --depth infinity {scan_url}")
-            else:
-                # 从根目录开始扫描
-                cmd = base_cmd + ["ls", "-R", "--depth", "infinity", task.root_svn_url, "--username", task.username, "--password", task.password]
-                logger.info(f"从根目录开始执行SVN扫描命令: svn ls -R --depth infinity {task.root_svn_url}")
+            # 始终从根目录开始扫描
+            # 如果有上次扫描目录，会在处理时跳过该目录之前的所有内容
+            cmd = base_cmd + ["ls", "-R", "--depth", "infinity", task.root_svn_url, "--username", task.username, "--password", task.password]
+            logger.info(f"执行SVN扫描命令: svn ls -R --depth infinity {task.root_svn_url}")
             
             # 执行命令并流式读取输出
             # 在Windows系统上，SVN命令的输出可能是GBK编码，需要特殊处理
@@ -92,6 +81,10 @@ class SVNScanner:
             scanned_count = 0
             has_files = False
             
+            # 如果继续扫描，需要跳过 last_scan_dir 之前的所有内容
+            should_process = not (last_scan_dir and task.scanned_count > 0)
+            logger.info(f"继续扫描模式: {not should_process}, last_scan_dir: {last_scan_dir}")
+            
             for line in process.stdout:
                 if not self.is_running:
                     process.terminate()
@@ -111,10 +104,18 @@ class SVNScanner:
                 # 跳过目录（以/结尾）
                 if line.endswith('/'):
                     # 构建完整的目录路径
-                    if last_scan_dir:
-                        current_dir = f"{last_scan_dir}/{line}"
-                    else:
-                        current_dir = line
+                    current_dir = line
+                    
+                    # 检查是否应该开始处理
+                    if not should_process and last_scan_dir:
+                        # 如果当前目录是 last_scan_dir 或其子目录，开始处理
+                        if current_dir == last_scan_dir or current_dir.startswith(last_scan_dir + '/'):
+                            logger.info(f"找到上次扫描目录，开始处理: {current_dir}")
+                            should_process = True
+                        else:
+                            # 跳过该目录
+                            continue
+                    
                     # 更新当前扫描目录
                     task.now_scan_dir = current_dir
                     self.db.commit()
@@ -122,21 +123,17 @@ class SVNScanner:
                     self._broadcast_status(task)
                     continue
                 
+                # 如果还没有到达上次扫描的目录，跳过
+                if not should_process:
+                    continue
+                
                 # 只有当读取到文件时，才将has_files设置为True
                 has_files = True
                 
                 # 解析文件信息
-                if last_scan_dir:
-                    # 如果是从上次的扫描目录开始，需要构建完整的路径
-                    full_path = f"{last_scan_dir}/{line}"
-                    file_name = os.path.basename(line)
-                    file_path = os.path.dirname(full_path) if os.path.dirname(full_path) else ''
-                    svn_url = f"{task.root_svn_url}/{full_path}"
-                else:
-                    # 从根目录开始
-                    file_name = os.path.basename(line)
-                    file_path = os.path.dirname(line) if os.path.dirname(line) else ''
-                    svn_url = f"{task.root_svn_url}/{line}"
+                file_name = os.path.basename(line)
+                file_path = os.path.dirname(line) if os.path.dirname(line) else ''
+                svn_url = f"{task.root_svn_url}/{line}"
                 
                 # 添加到批处理
                 file_batch.append(SVNFile(
@@ -178,19 +175,17 @@ class SVNScanner:
                 self._broadcast_status(task)
                 return
             
+            logger.info(f"SVN命令执行完成，本次扫描到 {scanned_count} 个文件，has_files={has_files}")
+            
             # 检查是否有文件被扫描
+            # 注意：不再递归到父目录，因为SVN ls -R 已经递归列出了所有子目录的内容
+            # 如果扫描完成，说明当前目录及其子目录都已经扫描完毕
             if last_scan_dir:
-                # 无论当前目录是否有文件，都尝试从父目录继续扫描
-                # 这样可以确保所有目录都被扫描
-                logger.info(f"当前目录 {last_scan_dir} 扫描完成，尝试从父目录继续扫描")
-                parent_dir = os.path.dirname(last_scan_dir)
-                if parent_dir:
-                    # 更新当前扫描目录为父目录
-                    task.now_scan_dir = parent_dir
-                    self.db.commit()
-                    # 重新开始扫描
-                    self.scan(task_id)
-                    return
+                logger.info(f"当前目录 {last_scan_dir} 及其子目录扫描完成")
+            
+            # 检查是否真的没有扫描到任何文件
+            if not has_files and task.scanned_count == 0:
+                logger.warning("本次扫描未找到任何文件，可能是SVN仓库为空或权限问题")
             
             # 扫描完成
             task.status = "已完成"
