@@ -9,8 +9,31 @@ echo ""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/backend"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
+
+# 尝试从 .env 文件读取端口配置
+ENV_FILE="$SCRIPT_DIR/frontend/.env"
 BACKEND_PORT=8001
 FRONTEND_PORT=5173
+
+if [ -f "$ENV_FILE" ]; then
+    while IFS='=' read -r key value; do
+        # 去除空格和注释
+        key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        case "$key" in
+            "VITE_BACKEND_PORT") BACKEND_PORT="${value:-8001}" ;;
+            "FRONTEND_PORT") FRONTEND_PORT="${value:-5173}" ;;
+        esac
+    done < "$ENV_FILE"
+fi
+
+# 环境变量优先级高于 .env 文件
+BACKEND_PORT="${BACKEND_PORT_ENV:-$BACKEND_PORT}"
+FRONTEND_PORT="${FRONTEND_PORT_ENV:-$FRONTEND_PORT}"
+
+echo "Using BACKEND_PORT=$BACKEND_PORT"
+echo "Using FRONTEND_PORT=$FRONTEND_PORT"
 
 # 日志文件
 BACKEND_LOG="$BACKEND_DIR/backend.log"

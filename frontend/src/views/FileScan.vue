@@ -102,6 +102,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { Button, Card, Progress, message, Alert, Empty, Tag } from 'ant-design-vue'
+import { API_ENDPOINTS } from '../config/api'
 
 const taskStatus = ref({ status: 'no_task' })
 const logs = ref([])
@@ -147,7 +148,7 @@ const loadTaskStatus = async () => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
     
-    const response = await fetch('http://localhost:8001/api/task/status', {
+    const response = await fetch(API_ENDPOINTS.taskStatus, {
       signal: controller.signal
     })
     
@@ -184,7 +185,7 @@ const startNewScan = async () => {
     }
     
     // 获取配置
-    const configResponse = await fetch('http://localhost:8001/api/config/get')
+    const configResponse = await fetch(API_ENDPOINTS.configGet)
     if (!configResponse.ok) {
       throw new Error('无法连接到服务器')
     }
@@ -201,7 +202,7 @@ const startNewScan = async () => {
     logs.value = []
     
     // 创建新任务
-    const response = await fetch('http://localhost:8001/api/task/new', {
+    const response = await fetch(API_ENDPOINTS.taskNew, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -258,7 +259,7 @@ const resumeScan = async (taskId) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000)
     
-    const response = await fetch(`http://localhost:8001/api/task/resume?task_id=${id}`, {
+    const response = await fetch(`${API_ENDPOINTS.taskResume}?task_id=${id}`, {
       method: 'POST',
       signal: controller.signal
     })
@@ -295,7 +296,7 @@ const pauseScan = async () => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
     
-    const response = await fetch('http://localhost:8001/api/task/pause', {
+    const response = await fetch(API_ENDPOINTS.taskPause, {
       method: 'POST',
       signal: controller.signal
     })
@@ -332,7 +333,7 @@ const connectWebSocket = () => {
   wsStatus.value = 'connecting'
   
   try {
-    ws.value = new WebSocket('ws://localhost:8001/api/ws/progress')
+    ws.value = new WebSocket(API_ENDPOINTS.wsProgress)
     
     ws.value.onopen = () => {
       wsStatus.value = 'connected'

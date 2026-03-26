@@ -125,6 +125,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Button, Card, Form, Input, InputNumber, message, Alert } from 'ant-design-vue'
+import { API_ENDPOINTS } from '../config/api'
 
 const formRef = ref(null)
 const formState = ref({
@@ -167,7 +168,7 @@ const loadConfig = async () => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
     
-    const response = await fetch('http://localhost:8001/api/config/get', {
+    const response = await fetch(API_ENDPOINTS.configGet, {
       signal: controller.signal
     })
     
@@ -214,7 +215,7 @@ const handleSubmit = async (values) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000)
     
-    const response = await fetch('http://localhost:8001/api/config/save', {
+    const response = await fetch(API_ENDPOINTS.configSave, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -275,7 +276,7 @@ const testConnection = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 30000)
     
     const response = await fetch(
-      `http://localhost:8001/api/config/test?root_svn_url=${encodeURIComponent(values.rootSvnUrl)}&username=${encodeURIComponent(values.username)}&password=${encodeURIComponent(values.password)}`,
+      `${API_ENDPOINTS.configTest}?root_svn_url=${encodeURIComponent(values.rootSvnUrl)}&username=${encodeURIComponent(values.username)}&password=${encodeURIComponent(values.password)}`
       { signal: controller.signal }
     )
     

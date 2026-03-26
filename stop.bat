@@ -1,40 +1,51 @@
 @echo off
-chcp 65001 >nul
 echo ==========================================
-echo SVN文件搜索系统 - Windows停止脚本
+echo SVN File Search System - Windows Stop
 echo ==========================================
 echo.
 
-echo [1/3] 正在停止后端服务...
+echo [1/3] Stopping backend service...
 taskkill /F /IM python.exe 2>nul
 taskkill /F /IM uvicorn.exe 2>nul
-echo [成功] 后端服务已停止
+echo [Success] Backend stopped
 
 echo.
-echo [2/3] 正在停止前端服务...
+echo [2/3] Stopping frontend service...
 taskkill /F /IM node.exe 2>nul
-echo [成功] 前端服务已停止
+echo [Success] Frontend stopped
 
 echo.
-echo [3/3] 正在清理端口占用...
+echo [3/3] Cleaning up port usage...
+
+:: 尝试从 .env 文件读取端口配置
+set ENV_FILE=%~dp0frontend\.env
 set BACKEND_PORT=8001
 set FRONTEND_PORT=5173
 
-:: 释放后端端口
+if exist "%ENV_FILE%" (
+    for /f "tokens=1,2 delims==" %%a in ('type "%ENV_FILE%" ^| findstr /r "^VITE_BACKEND_PORT=^FRONTEND_PORT="') do (
+        if "%%a"=="VITE_BACKEND_PORT" set BACKEND_PORT=%%b
+        if "%%a"=="FRONTEND_PORT" set FRONTEND_PORT=%%b
+    )
+)
+
+:: 环境变量优先级高于 .env 文件
+if defined BACKEND_PORT_ENV (set BACKEND_PORT=%BACKEND_PORT_ENV%)
+if defined FRONTEND_PORT_ENV (set FRONTEND_PORT=%FRONTEND_PORT_ENV%)
+
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%BACKEND_PORT%"') do (
     taskkill /F /PID %%a 2>nul
 )
 
-:: 释放前端端口
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%FRONTEND_PORT%"') do (
     taskkill /F /PID %%a 2>nul
 )
 
-echo [成功] 端口已释放
+echo [Success] Ports released
 
 echo.
 echo ==========================================
-echo [成功] 所有服务已停止！
+echo [Success] All services stopped!
 echo ==========================================
 echo.
 pause
