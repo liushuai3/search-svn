@@ -13,7 +13,7 @@ set BACKEND_PORT=8001
 set FRONTEND_PORT=5173
 
 if exist "%ENV_FILE%" (
-    for /f "tokens=1,2 delims==" %%a in ('type "%ENV_FILE%" ^| findstr /r "^VITE_BACKEND_PORT=^FRONTEND_PORT="') do (
+    for /f "tokens=1,2 delims==" %%a in ('type "%ENV_FILE%" ^| findstr /r /v "^#" ^| findstr /r "^VITE_BACKEND_PORT=^FRONTEND_PORT="') do (
         if "%%a"=="VITE_BACKEND_PORT" set BACKEND_PORT=%%b
         if "%%a"=="FRONTEND_PORT" set FRONTEND_PORT=%%b
     )

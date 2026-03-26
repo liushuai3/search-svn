@@ -17,7 +17,10 @@ FRONTEND_PORT=5173
 
 if [ -f "$ENV_FILE" ]; then
     while IFS='=' read -r key value; do
-        # 去除空格和注释
+        # 跳过空行和注释行
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        
+        # 去除空格
         key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         
