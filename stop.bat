@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 echo ==========================================
 echo SVN File Search System - Windows Stop
 echo ==========================================
