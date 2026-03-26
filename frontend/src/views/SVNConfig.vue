@@ -276,7 +276,7 @@ const testConnection = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 30000)
     
     const response = await fetch(
-      `${API_ENDPOINTS.configTest}?root_svn_url=${encodeURIComponent(values.rootSvnUrl)}&username=${encodeURIComponent(values.username)}&password=${encodeURIComponent(values.password)}`
+      `${API_ENDPOINTS.configTest}?root_svn_url=${encodeURIComponent(values.rootSvnUrl)}&username=${encodeURIComponent(values.username)}&password=${encodeURIComponent(values.password)}`,
       { signal: controller.signal }
     )
     

@@ -169,7 +169,7 @@ const handleSearch = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时
     
     const response = await fetch(
-      `${API_ENDPOINTS.fileSearch}?kw=${encodeURIComponent(searchKeyword.value)}&page=${pagination.current}&page_size=${pagination.pageSize}`
+      `${API_ENDPOINTS.fileSearch}?kw=${encodeURIComponent(searchKeyword.value)}&page=${pagination.current}&page_size=${pagination.pageSize}`,
       { signal: controller.signal }
     )
     
@@ -269,7 +269,7 @@ const downloadFile = async (svnUrl, fileName) => {
     message.loading('正在准备下载...', 1)
     // 调用后端的下载接口，在新窗口中打开
     window.open(
-      `${API_ENDPOINTS.fileDownload}?file_url=${encodeURIComponent(svnUrl)}&file_name=${encodeURIComponent(fileName)}`
+      `${API_ENDPOINTS.fileDownload}?file_url=${encodeURIComponent(svnUrl)}&file_name=${encodeURIComponent(fileName)}`,
       '_blank',
       'noopener,noreferrer'
     )

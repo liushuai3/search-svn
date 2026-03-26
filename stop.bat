@@ -17,7 +17,6 @@ echo [Success] Frontend stopped
 echo.
 echo [3/3] Cleaning up port usage...
 
-:: 尝试从 .env 文件读取端口配置
 set ENV_FILE=%~dp0frontend\.env
 set BACKEND_PORT=8001
 set FRONTEND_PORT=5173
@@ -29,7 +28,6 @@ if exist "%ENV_FILE%" (
     )
 )
 
-:: 环境变量优先级高于 .env 文件
 if defined BACKEND_PORT_ENV (set BACKEND_PORT=%BACKEND_PORT_ENV%)
 if defined FRONTEND_PORT_ENV (set FRONTEND_PORT=%FRONTEND_PORT_ENV%)
 
